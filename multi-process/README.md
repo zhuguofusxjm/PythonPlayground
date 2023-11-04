@@ -29,6 +29,49 @@ if __name__ == "__main__":
     print("All processes have finished.")
 
 ```
+---------------------------------------------------------------------------
+concurrent.futures.ThreadPoolExecutor 提供了多种方式来提交和执行任务，包括 map 和 submit 方法。它们之间的主要区别在于任务的提交方式和结果的获取方式。
+* submit 方法：
+submit 方法用于提交单个任务，并返回一个 Future 对象，该对象代表将来的结果。您可以使用 Future 对象的 result() 方法来获取任务的结果。
+以下是一个使用 submit 方法的示例：
+```pycon
+with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+    futures = [executor.submit(worker, task) for task in tasks]
+
+for future in concurrent.futures.as_completed(futures):
+    result = future.result()
+    print(result)
+```
+在上述示例中，我们使用 submit 方法提交多个任务，每个任务返回一个 Future 对象。然后，我们遍历 Future 对象列表，使用 result 方法获取任务的结果。
+这边有两种结果的遍历方式：
+A）concurrent.futures.as_completed(results)：
+as_completed 是一个生成器，它会在结果就绪时按顺序生成 Future 对象。这意味着它会首先生成第一个就绪的 Future 对象，然后是第二个，以此类推。
+这对于按就绪顺序获取结果非常有用。如果某些任务较早完成，您可以尽早获取它们的结果，而不必等待所有任务完成。
+使用 as_completed 时，您可以处理结果的顺序是不确定的，因为它取决于任务的完成时间。
+B）直接遍历 futures：
+直接遍历 futures 列表会按照列表中任务的顺序依次获取每个 Future 对象的结果。
+这对于按任务提交的顺序获取结果非常有用，如果您希望按照任务提交的顺序进行处理，直接遍历 futures 是一个好选择。
+使用这种方式，您可以确保按照任务提交的顺序获取结果，结果的顺序是确定的。
+总之，选择使用哪种方式取决于您的需求。如果您需要按就绪顺序获取结果或者关心任务的完成时间，可以使用 as_completed。如果您希望按照任务提交的顺序获取结果，可以直接遍历 futures。
+
+* map 方法：
+map 方法用于批量提交任务，接受一个可迭代的任务列表，并返回一个迭代器，通过迭代器可以按顺序获取每个任务的结果。
+以下是一个使用 map 方法的示例：
+```pycon
+with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+    results = executor.map(worker, tasks)
+
+for result in results:
+    print(result)
+
+
+```
+在上述示例中，我们使用 map 方法批量提交任务，并通过迭代器逐一获取任务的结果。
+总结区别：
+submit 用于单个任务的提交，返回一个 Future 对象。
+map 用于批量任务的提交，返回一个结果迭代器。
+submit 允许您灵活控制任务的提交和结果的获取，但需要显式处理 Future 对象。
+map 更便捷，适用于按顺序获取结果的场景，但不适用于需要灵活控制任务提交的情况。
 
 下面给出一个更加接近实用的例子, concurrent.futures.ProcessPoolExecutor 来执行多进程任务
 ```pycon
