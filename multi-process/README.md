@@ -175,3 +175,65 @@ if __name__ == "__main__":
             print(f"Result: {result}")
 ```
 
+------------------------------------------------------------------------------
+多进程通信是指不同的进程之间通过某种方式进行数据交换和信息传递的过程。多进程通信通常用于解决不同进程之间需要协同工作、共享数据或传递信息的情况。有多种方式可以实现多进程通信，其中包括管道、队列、共享内存、信号、套接字等。
+以下是一个经典案例，演示了如何使用 multiprocessing 模块中的队列（multiprocessing.Queue）来实现多进程通信，将数据从一个进程传递到另一个进程：
+```pycon
+import multiprocessing
+
+# 子进程函数，将数据写入队列
+def writer(q):
+    for item in range(1, 6):
+        q.put(f"Item {item}")
+        print(f"Producing {item}")
+
+# 子进程函数，从队列读取数据
+def reader(q):
+    while True:
+        item = q.get()
+        if item is None:
+            break
+        print(f"Consuming {item}")
+
+if __name__ == '__main__':
+    # 创建一个队列
+    q = multiprocessing.Queue()
+
+    # 创建两个子进程，一个用于写入数据，一个用于读取数据
+    writer_process = multiprocessing.Process(target=writer, args=(q,))
+    reader_process = multiprocessing.Process(target=reader, args=(q,))
+
+    # 启动子进程
+    writer_process.start()
+    reader_process.start()
+
+    # 等待子进程完成
+    writer_process.join()
+
+    # 发送结束信号给读取数据的子进程
+    q.put(None)
+    reader_process.join()
+
+```
+当然reader也可以使用多线程/进程来处理，进一步提升效率
+```pycon
+# 子进程函数，从队列读取数据
+def reader(q):
+    '''
+    支持多线程处理Reader
+    :param q:
+    :return:
+    '''
+    def process_item(item):
+        print(f"Processing {item}")
+        return f"Processed {item}"
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        while True:
+            item = q.get()
+            if item is None:
+                break
+            future = executor.submit(process_item, item)
+            result = future.result()
+            print(f"Result: {result}")
+```
