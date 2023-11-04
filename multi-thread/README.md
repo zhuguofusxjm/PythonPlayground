@@ -187,15 +187,35 @@ for i in range(10):
     results.append(future)
 ```
 
-下面给出一个更加接近实用的例子：
+下面给出一个更加接近实用的例子, concurrent.futures.ThreadPoolExecutor 来执行多线程任务：
 ```pycon
 import concurrent.futures
 from functools import partial
+import multiprocessing
+import threading
+import random
+import time
 
 
 # 示例任务函数
+
+
+def print_thread_and_process():
+    # 生成一个1到5秒之间的随机休眠时间
+    random_sleep_time = random.uniform(3, 5)
+    time.sleep(random_sleep_time)
+    current_thread = threading.current_thread()
+    thread_name = current_thread.name
+    current_process = multiprocessing.current_process()
+    process_name = current_process.name
+    print(f"####Executing in thread: {current_thread.ident} and in process: {current_process.ident}")
+
+
 def example_task1(a, b):
-    return f"Task executed with parameters a={a} and b={b}, sum={a+b}"
+    print_thread_and_process()
+    return f"Task executed with parameters a={a} and b={b}, sum={a + b}"
+
+
 def example_task2(*args, **kwargs):
     '''
     :param args:*args：它用于传递不定数量的非关键字参数（位置参数）。这意味着您可以向函数传递任意数量的参数，它们将被打包成一个元组，供函数内部使用。
@@ -210,6 +230,7 @@ def example_task2(*args, **kwargs):
     example_function(1, 2, 3, kwarg1="custom", param1="value1", param2="value2")
     :return:
     '''
+    print_thread_and_process()
     result = 0
     for arg in args:
         print(f"arg: {arg}")
@@ -219,10 +240,12 @@ def example_task2(*args, **kwargs):
         result += value
     return f"Task executed with parameters sum={result}"
 
+
 class ThreadPoolManager:
     '''
     多线程处理器
     '''
+
     def __init__(self, max_workers=3):
         self.max_workers = max_workers
 
@@ -236,7 +259,6 @@ class ThreadPoolManager:
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             results = [self.execute_task(executor, task, timeout=timeout) for task in tasks]
             return results
-
 
     def execute_task(self, executor, task, timeout=None):
         try:
@@ -252,7 +274,6 @@ class ThreadPoolManager:
         except Exception as e:
             print(f"Task encountered an exception: {e}")
         return None
-
 
 
 if __name__ == "__main__":
